@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05060b">
+<title>QEMINI — AI od QOGLE</title>
+<style>
+:root{--bg:#05060b;--fg:#f3f4f8;--muted:#a7a9b5;--surface:#1c1d24;--line:rgba(255,255,255,.09);--blue:#4285f4}
+body.light{--bg:#f7f8fc;--fg:#202431;--muted:#747b8b;--surface:#fff;--line:rgba(30,40,60,.1)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;transition:background .3s,color .3s}
+.app{height:100dvh;position:relative;isolation:isolate;overflow:hidden;background:var(--bg)}
+/* Soft moving QOGLE color field behind the composer */
+.aurora{position:absolute;z-index:-1;left:-20%;right:-20%;bottom:-31%;height:68%;filter:blur(48px);opacity:.82;pointer-events:none;overflow:hidden;animation:auroraHue 18s ease-in-out infinite alternate}
+.blob{position:absolute;width:58vw;height:58vw;max-width:720px;max-height:720px;border-radius:50%;mix-blend-mode:screen;animation:float 10s ease-in-out infinite alternate, colorPulse 14s ease-in-out infinite alternate}
+.b1{left:4%;bottom:0;background:radial-gradient(circle,#244edb 0%,#243b9e 32%,transparent 70%)}
+.b2{left:30%;bottom:-16%;background:radial-gradient(circle,#6847e8 0%,#3834a5 35%,transparent 70%);animation-delay:-4s}
+.b3{right:0;bottom:-8%;background:radial-gradient(circle,#087dba 0%,#174d9c 34%,transparent 70%);animation-delay:-7s}
+@keyframes float{0%{transform:translate3d(-7%,5%,0) scale(.86)}35%{transform:translate3d(4%,-8%,0) scale(1.08)}70%{transform:translate3d(9%,3%,0) scale(.98)}100%{transform:translate3d(-2%,-10%,0) scale(1.16)}}
+@keyframes colorPulse{0%{filter:hue-rotate(0deg) saturate(1)}50%{filter:hue-rotate(45deg) saturate(1.35)}100%{filter:hue-rotate(105deg) saturate(1.15)}}
+@keyframes auroraHue{0%{filter:blur(48px) hue-rotate(0deg);transform:translateX(-2%) scale(1)}50%{filter:blur(56px) hue-rotate(35deg);transform:translateX(3%) scale(1.06)}100%{filter:blur(48px) hue-rotate(85deg);transform:translateX(-3%) scale(1.02)}}
+body.light .aurora{opacity:.36;filter:blur(60px)}
+body.light .blob{mix-blend-mode:multiply}
+.top{height:82px;display:flex;align-items:center;gap:13px;padding:0 22px;position:relative;z-index:2}
+.circle,.pill{border:1px solid var(--line);background:rgba(120,125,140,.16);color:var(--fg);cursor:pointer;backdrop-filter:blur(18px)}
+.circle{width:48px;height:48px;border-radius:50%;font-size:21px;display:grid;place-items:center}
+.brand{font-weight:800;font-size:23px;letter-spacing:-1px;margin-right:auto}
+.brand span:nth-child(1){color:#4285f4}.brand span:nth-child(2){color:#ea4335}.brand span:nth-child(3){color:#fbbc05}.brand span:nth-child(4){color:#34a853}.brand span:nth-child(5){color:#4285f4}.brand span:nth-child(6){color:#ea4335}
+.model{font-size:14px;color:var(--muted);font-weight:600;margin-left:5px}
+.pill{border-radius:30px;padding:12px 17px;font-weight:650;font-size:14px}
+.profile{background:#e83f82;color:white;border:0;font-size:17px;font-weight:700}.profile.logged{box-shadow:0 0 0 3px rgba(232,63,130,.18)}
+main{height:calc(100% - 82px);display:flex;flex-direction:column;align-items:center;padding:0 22px 20px}
+.center{width:min(720px,100%);margin:auto 0 0;display:flex;flex-direction:column;align-items:stretch}
+.greeting{text-align:center;margin:0 auto 32px;animation:appear .8s ease both}
+.greeting .spark{font-size:30px;margin-bottom:12px;color:#9bbcff}
+h1{font-size:clamp(30px,5vw,48px);line-height:1.12;letter-spacing:-1.8px;margin:0;font-weight:680}
+.sub{color:var(--muted);margin:12px 0 0;font-size:15px}
+.suggestions{display:flex;flex-direction:column;gap:17px;width:min(600px,100%);margin:0 auto 30px}
+.suggestion{display:flex;align-items:center;gap:18px;background:none;border:0;color:var(--fg);text-align:left;font-size:clamp(16px,2.3vw,20px);font-weight:620;line-height:1.35;cursor:pointer;padding:2px 6px;transition:transform .2s,opacity .2s}
+.suggestion:hover{transform:translateX(5px);opacity:.82}
+.sicon{width:26px;flex:none;color:var(--muted);font-size:22px;text-align:center;font-weight:400}
+.composer{width:100%;border:1px solid rgba(255,255,255,.07);background:rgba(31,32,40,.94);backdrop-filter:blur(24px);border-radius:36px;padding:13px 14px 13px 17px;box-shadow:0 14px 50px rgba(0,0,0,.22);display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+body.light .composer{background:rgba(255,255,255,.94);border-color:var(--line);box-shadow:0 12px 45px rgba(50,70,110,.13)}
+.add{border:0;background:transparent;color:var(--fg);font-size:31px;font-weight:300;width:38px;height:42px;cursor:pointer}
+textarea{flex:1;min-width:0;resize:none;border:0;outline:0;background:transparent;color:var(--fg);font:16px inherit;font-size:17px;line-height:1.4;max-height:120px;padding:9px 0}
+textarea::placeholder{color:#a5a5ae}
+.mic,.voice,.send{border:0;color:var(--fg);cursor:pointer;display:grid;place-items:center}
+.mic{background:transparent;font-size:23px;width:35px;height:40px}
+.voice{width:48px;height:48px;border-radius:50%;background:#19378d;font-size:23px;box-shadow:0 0 25px rgba(66,133,244,.25)}
+.send{display:none;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4285f4,#8c62e8);font-size:20px}
+.hint{text-align:center;color:var(--muted);font-size:10px;margin:12px 0 0;opacity:.8}
+.chatlog{width:100%;max-height:35vh;overflow:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.msg{padding:13px 16px;border-radius:18px;max-width:85%;line-height:1.5;font-size:14px;white-space:pre-wrap}
+.msg.user{align-self:flex-end;background:var(--surface)}.msg.ai{align-self:flex-start;background:rgba(120,130,155,.15);border:1px solid var(--line)}
+body.light .msg.ai{background:#fff}
+.drawer{position:absolute;z-index:5;inset:0 auto 0 0;width:min(310px,85vw);padding:20px;background:var(--surface);border-right:1px solid var(--line);transform:translateX(-105%);transition:transform .25s;box-shadow:15px 0 50px rgba(0,0,0,.25)}
+.drawer.open{transform:translateX(0)}
+.login-overlay{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.66);backdrop-filter:blur(9px);display:none;align-items:center;justify-content:center;padding:20px}.login-overlay.show{display:flex}.login-card{width:min(390px,100%);background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:27px;box-shadow:0 25px 80px rgba(0,0,0,.4)}.login-card h2{margin:0 0 8px;font-size:25px}.login-card p{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 20px}.login-card input{width:100%;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg);padding:14px;font:inherit;outline:none}.login-actions{display:flex;gap:9px;margin-top:15px}.login-actions button{flex:1;border:0;border-radius:14px;padding:13px;cursor:pointer;font-weight:700}.login-primary{background:#e83f82;color:white}.login-secondary{background:var(--bg);color:var(--fg)}.profile-menu{position:absolute;right:20px;top:72px;z-index:6;background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:13px;min-width:190px;box-shadow:0 15px 40px rgba(0,0,0,.25);display:none}.profile-menu.show{display:block}.profile-name{font-weight:700;font-size:14px;margin:3px 5px 10px}.profile-menu button{width:100%;border:0;background:transparent;color:var(--fg);text-align:left;padding:10px;border-radius:10px;cursor:pointer}.profile-menu button:hover{background:var(--bg)}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.drawer button{color:var(--fg)}.newchat{width:100%;padding:14px;border-radius:20px;border:1px solid var(--line);background:transparent;text-align:left;font-weight:650;margin-bottom:22px}.recent{font-size:12px;color:var(--muted);margin:12px 5px}.recent-item{padding:11px 8px;color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes appear{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.aurora,.blob{animation:none!important}}
+@media(max-width:520px){.top{height:76px;padding:0 16px;gap:10px}.brand{font-size:21px}.model{display:none}.pill{padding:10px 13px;font-size:13px}main{height:calc(100% - 76px);padding:0 18px 22px}.greeting{margin-bottom:35px}.suggestions{gap:18px;margin-bottom:34px}.suggestion{font-size:18px;gap:15px}.composer{border-radius:36px;padding:10px 11px 10px 13px;gap:8px}.voice{width:44px;height:44px}.hint{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+ <header class="top">
+  <button class="circle" id="menu" aria-label="Menu">☰</button>
+  <div class="brand"><span>Q</span><span>E</span><span>M</span><span>I</span><span>N</span><span>I</span></div>
+  <span class="model">· QOGLE AI</span>
+  <button class="circle" id="theme" aria-label="Přepnout vzhled">☼</button>
+  <button class="pill" id="upgrade">QOGLE+</button>
+  <button class="circle profile" id="profileButton" aria-label="Profil">R</button>
+ </header>
+ <div class="profile-menu" id="profileMenu"><div class="profile-name" id="profileName">Nepřihlášený uživatel</div><button id="profileAction">Přihlásit se</button></div>
+ <main>
+  <section class="center">
+   <div class="greeting" id="greeting"><div class="spark">✦</div><h1><span style="background:linear-gradient(100deg,#78a9ff,#c59cff,#f18eb5);-webkit-background-clip:text;background-clip:text;color:transparent">Ahoj, co dnes vytvoříme?</span></h1><p class="sub">Jsem QEMINI. Pojďme na to společně.</p></div>
+   <div class="chatlog" id="chatlog"></div>
+   <div class="suggestions" id="suggestions">
+    <button class="suggestion" data-q="Pomoz mi napsat úvodní odstavec příběhu."><span class="sicon">✎</span><span>Pomoz mi napsat úvodní odstavec příběhu</span></button>
+    <button class="suggestion" data-q="Pomoz mi vybrat film na večer."><span class="sicon">▣</span><span>Pomoz mi vybrat film na večer</span></button>
+    <button class="suggestion" data-q="Vyzkoušej mě z témat, která se učím."><span class="sicon">↗</span><span>Vyzkoušej mě z toho, co se učím</span></button>
+   </div>
+   <div class="composer">
+    <button class="add" id="add" aria-label="Přidat">＋</button>
+    <textarea id="input" rows="1" placeholder="Zeptej se QEMINI..." aria-label="Zpráva"></textarea>
+    <button class="mic" id="mic" aria-label="Hlasové zadání">♩</button>
+    <button class="voice" id="voice" aria-label="Hlasový režim">〽</button>
+    <button class="send" id="send" aria-label="Odeslat">↑</button>
+   </div>
+   <p class="hint">QEMINI může dělat chyby. Důležité informace si ověř.</p>
+  </section>
+ </main>
+ <aside class="drawer" id="drawer">
+  <div class="drawer-head"><div class="brand"><span>Q</span><span>E</span><span>M</span><span>I</span><span>N</span><span>I</span></div><button class="circle" id="close">×</button></div>
+  <button class="newchat" id="new">＋ &nbsp; Nový chat</button>
+  <div class="recent">NEDÁVNÉ KONVERZACE</div><div id="history"></div>
+ </aside>
+</div>
+<div class="login-overlay" id="loginOverlay">
+ <div class="login-card">
+  <div class="brand" style="margin-bottom:20px"><span>Q</span><span>E</span><span>M</span><span>I</span><span>N</span><span>I</span></div>
+  <h2 id="loginTitle">Vítej v QEMINI</h2>
+  <p id="loginDescription">Zadej své jméno. QEMINI si na tomto zařízení zapamatuje tvůj profil i chaty.</p>
+  <input id="username" maxlength="30" autocomplete="name" placeholder="Tvoje jméno">
+  <div class="login-actions"><button class="login-secondary" id="cancelLogin">Zrušit</button><button class="login-primary" id="loginSubmit">Pokračovat</button></div>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id), input=$('input'),log=$('chatlog');
+let dark=localStorage.getItem('qemini-theme')!=='light';
+let currentUser='';                 // Start every fresh session signed out.
+let chats=[],activeChatId=null;
+const storeKey=()=>`qemini-data-${currentUser.trim().toLocaleLowerCase('cs-CZ')}`;
+const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+function setTheme(){document.body.classList.toggle('light',!dark);$('theme').textContent=dark?'☼':'☾';localStorage.setItem('qemini-theme',dark?'dark':'light')}
+setTheme();
+$('theme').onclick=()=>{dark=!dark;setTheme()};
+$('menu').onclick=()=>$('drawer').classList.add('open');
+$('close').onclick=()=>$('drawer').classList.remove('open');
+
+function addMsg(t,c){let d=document.createElement('div');d.className='msg '+c;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight}
+function answer(q){
+ let l=q.toLowerCase();
+ if(l.includes('ahoj')||l.includes('čau'))return'Ahoj! ✨ Co dnes společně vymyslíme?';
+ if(l.includes('uč')||l.includes('škol')||l.includes('vyzkouš'))return'Rád pomůžu se studiem! Napiš mi předmět a téma. Můžeme si ho vysvětlit, procvičit nebo připravit krátký kvíz. 📚';
+ if(l.includes('příběh'))return'Jasně! Začněme atmosférou, hlavní postavou a malou záhadou, která čtenáře vtáhne. Jaký žánr by se ti líbil?';
+ if(l.includes('film'))return'Můžeme vybrat podle nálady: komedii, dobrodružství, animák nebo něco napínavého. Jaký žánr máš dnes chuť sledovat?';
+ return'Tvoje zpráva dorazila do QEMINI! Tohle je zatím ukázková verze rozhraní — skutečný AI model ještě není připojený. Až ho připojíme, bude umět odpovídat na širokou škálu témat.';
+}
+function saveChats(){if(currentUser)localStorage.setItem(storeKey(),JSON.stringify(chats))}
+function activeChat(){return chats.find(c=>c.id===activeChatId)}
+function renderHistory(){
+ const h=$('history');h.innerHTML='';
+ if(!currentUser){let d=document.createElement('div');d.className='recent-item';d.textContent='Přihlas se pro ukládání chatů';h.appendChild(d);return}
+ if(!chats.length){let d=document.createElement('div');d.className='recent-item';d.textContent='Zatím žádné chaty';h.appendChild(d);return}
+ [...chats].reverse().forEach(chat=>{
+  let b=document.createElement('button');b.className='recent-item';b.style.cssText='display:block;width:100%;border:0;background:'+(chat.id===activeChatId?'var(--bg)':'transparent')+';text-align:left;cursor:pointer;border-radius:10px';
+  b.textContent=chat.title||'Nová konverzace';b.onclick=()=>openChat(chat.id);h.appendChild(b);
+ });
+}
+function renderChat(){
+ log.innerHTML='';
+ const chat=activeChat();
+ const hasMessages=!!(chat&&chat.messages.length);
+ $('greeting').style.display=hasMessages?'none':'block';
+ $('suggestions').style.display=hasMessages?'none':'flex';
+ if(chat)chat.messages.forEach(m=>addMsg(m.text,m.role));
+ renderHistory();
+}
+function createChat(){
+ const c={id:makeId(),title:'Nová konverzace',messages:[],updated:Date.now()};
+ chats.push(c);activeChatId=c.id;renderChat();
+}
+function openChat(id){activeChatId=id;renderChat();$('drawer').classList.remove('open')}
+function newChat(){
+ if(!currentUser){openLogin();return}
+ createChat();$('drawer').classList.remove('open');
+}
+$('new').onclick=newChat;
+function submit(q=input.value){
+ q=q.trim();if(!q)return;
+ if(!currentUser){openLogin();return}
+ if(!activeChat())createChat();
+ const chat=activeChat();
+ chat.messages.push({role:'user',text:q});
+ if(chat.messages.length===1)chat.title=q.length>34 ? q.slice(0,34)+'…' : q;
+ chat.updated=Date.now();saveChats();
+ renderChat();input.value='';input.style.height='auto';
+ $('send').style.display='none';$('mic').style.display='grid';$('voice').style.display='grid';
+ setTimeout(()=>{
+  const reply=answer(q);const c=activeChat();
+  if(!c)return;
+  c.messages.push({role:'ai',text:reply});c.updated=Date.now();saveChats();renderChat();
+ },450);
+}
+const thirty=34;
+$('send').onclick=()=>submit();
+input.addEventListener('input',()=>{
+ input.style.height='auto';input.style.height=Math.min(input.scrollHeight,110)+'px';
+ let has=!!input.value.trim();$('send').style.display=has?'grid':'none';
+ $('mic').style.display=has?'none':'grid';$('voice').style.display=has?'none':'grid';
+});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}});
+document.querySelectorAll('.suggestion').forEach(b=>b.onclick=()=>submit(b.dataset.q));
+
+const profileButton=$('profileButton'),profileMenu=$('profileMenu'),loginOverlay=$('loginOverlay');
+function renderProfile(){
+ const name=currentUser.trim();
+ profileButton.textContent=name?Array.from(name)[0].toLocaleUpperCase('cs-CZ'):'?';
+ profileButton.classList.toggle('logged',!!name);
+ $('profileName').textContent=name||'Nepřihlášený uživatel';
+ $('profileAction').textContent=name?'Odhlásit se':'Přihlásit se';
+}
+function openLogin(){
+ profileMenu.classList.remove('show');$('username').value='';
+ $('loginTitle').textContent='Vítej v QEMINI';
+ $('loginDescription').textContent='Zadej své jméno. QEMINI si na tomto zařízení zapamatuje tvůj profil i chaty.';
+ loginOverlay.classList.add('show');setTimeout(()=>$('username').focus(),50);
+}
+function loadUser(name){
+ currentUser=name.trim();
+ localStorage.setItem('qemini-user',currentUser);
+ try{chats=JSON.parse(localStorage.getItem(storeKey())||'[]');if(!Array.isArray(chats))chats=[]}
+ catch(e){chats=[]}
+ activeChatId=chats.length?chats[chats.length-1].id:null;
+ renderProfile();renderChat();
+}
+profileButton.onclick=()=>profileMenu.classList.toggle('show');
+$('profileAction').onclick=()=>{
+ if(currentUser){
+  saveChats();currentUser='';chats=[];activeChatId=null;
+  localStorage.removeItem('qemini-user');renderProfile();renderChat();
+  profileMenu.classList.remove('show');
+ }else openLogin();
+};
+$('cancelLogin').onclick=()=>loginOverlay.classList.remove('show');
+$('loginSubmit').onclick=()=>{
+ const name=$('username').value.trim();
+ if(!name){$('username').focus();return}
+ loadUser(name);loginOverlay.classList.remove('show');
+};
+$('username').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginSubmit').click()});
+loginOverlay.addEventListener('click',e=>{if(e.target===loginOverlay)loginOverlay.classList.remove('show')});
+document.addEventListener('click',e=>{if(!profileMenu.contains(e.target)&&e.target!==profileButton)profileMenu.classList.remove('show')});
+
+renderProfile();renderChat(); // Intentionally not signed in on first launch.
+$('upgrade').onclick=()=>alert('QOGLE+ — připravujeme.');
+$('add').onclick=()=>alert('Přílohy budou dostupné v další verzi.');
+$('mic').onclick=()=>alert('Hlasové zadávání připravujeme.');
+$('voice').onclick=()=>alert('Hlasový režim QEMINI připravujeme.');
+</script>
+</body></html>
